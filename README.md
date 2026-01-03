@@ -1,1 +1,29 @@
-# Bayesian-quantum-parameter-estimation
+## Codes used in: *[Bayesian quantum parameter estimation: Strong hierarchy between greedy, parallel, sequential and indefinite causal order strategies and where it collapses](https://arxiv.org/abs/2601?.-----)*
+#### Erik L. André, Jessica Bavaresco and Mohammad Mehboudi
+
+This repository contains all the code files used to obtain the data in the article ---
+
+To be run in MATLAB, [QETLAB](http://www.qetlab.com/), [SeDuMi](https://github.com/sqlp/sedumi) and [Mosek](https://docs.mosek.com/11.0/toolbox/index.html) are required. The following files are included in the repository:
+
+- [testeroptimization_sdp_kcopy_seesaw.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/testeroptimization_sdp_kcopy_seesaw.m):
+**Add description**
+- [phaseestimation_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/phaseestimation_greedy.m):
+**Add description**
+- [phaseestimation_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/phaseestimation_kcopy.m):
+**Add description**
+- [thermometry_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/thermometry_greedy.m):
+**Add description**
+- [thermometry_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/thermometry_kcopy.m):
+**Add description**
+- [unitary_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_greedy.m):
+**Add description**
+- [unitary_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_kcopy.m):
+**Add description**
+- [unitary_greedy_haar.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_greedy_haar.m):
+**Add description**
+- [unitary_kcopy_haar.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_kcopy_haar.m):
+**Add description**
+- [unitary_and_noise_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_and_noise_kcopy.m):
+**Add description**
+- [VanTrees_check.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/VanTrees_check.m):
+**Add description**
