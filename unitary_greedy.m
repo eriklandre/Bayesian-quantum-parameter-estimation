@@ -169,14 +169,14 @@ for mc = 1:n_monte_carlo
         if copy < k_copies
             likelihood = zeros(Nh, 1);
             for k = 1:Nh
-                likelihood(k) = real(trace(T_adaptive(:,:,outcome_idx) * CkN(:,:,k))); %/ (d^2)
+                likelihood(k) = real(trace(T_adaptive(:,:,outcome_idx) * Ck(:,:,k))); %/ (d^2)
             end
             p_current = likelihood .* p_current;
             p_current = p_current / sum(p_current);
         end
 
         if copy == k_copies
-            final_scores(mc) = (1/(d^2)) * real(trace(Ci(:,:,outcome_idx) * C_trueU));
+            final_scores(mc) = (1/(d^2)) * real(trace(Ci(:,:,outcome_idx) * C_true));
         end
     end
 end
