@@ -104,9 +104,9 @@ for mc = 1:n_monte_carlo
         [T_adaptive, current_score, ~] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],1,2,1);       % SDP optimization to get the optimal tester and score
 
         % SEESAW algorithm (takes as input the optimal tester and optimizes over estimators)
-
+        T_temp = T_adaptive;
         gap        = 1;
-        precision  = 1e-6;
+        precision  = 1e-4; %tune to 1e-6 when more precision is needed
         rounds     = 0;
         old_score  = current_score;
         flag_value = 0;
@@ -114,7 +114,7 @@ for mc = 1:n_monte_carlo
         while gap > precision
             rounds = rounds + 1;
 
-            [estimators, ~] = estimator_optimization(p_current, T_adaptive, Ck, theta_i);        % optimization over the estimators
+            [estimators, ~] = estimator_optimization(p_current, T_temp, Ck, theta_i);        % optimization over the estimators
             theta_i = estimators;
 
             Ci = zeros(d^2,d^2,No);
