@@ -166,37 +166,22 @@ for mc = 1:n_monte_carlo
         rand_val = rand();
         outcome_idx = find(cumulative_probs >= rand_val, 1, 'first');
         
-        if copy <= k_copies
+        if copy < k_copies
             likelihood = zeros(Nh, 1);
             for k = 1:Nh
-                likelihood(k) = real(trace(T_adaptive(:,:,outcome_idx) * Ck(:,:,k))); %/ (d^2)
+                likelihood(k) = real(trace(T_adaptive(:,:,outcome_idx) * CkN(:,:,k))); %/ (d^2)
             end
-            p_current = likelihood .* p_current;        % Update prior using Bayes rule
+            p_current = likelihood .* p_current;
             p_current = p_current / sum(p_current);
         end
 
-        if copy == k_copies % for the last copy, store the tester and the estimator function Xi
-            T_final = T_adaptive;
-            Xi_final = zeros(d^2,d^2,No);
-            r_final = zeros(No,Nh);
-            for i=1:No
-                for k=1:Nh
-                    r_final(i,k) = (1/(d^2))*real(trace(Ci(:,:,i)*Ck(:,:,k))); 
-                    Xi_final(:,:,i) = Xi_final(:,:,i) + p_current(k)*r_final(i,k)*Ck(:,:,k);
-                end
-            end
+        if copy == k_copies
+            final_scores(mc) = (1/(d^2)) * real(trace(Ci(:,:,outcome_idx) * C_trueU));
         end
-
     end
-    
-    final_score = 0;
-    for i = 1:No
-        final_score = final_score + real(trace(T_final(:,:,i) * Xi_final(:,:,i)));
-    end
-    final_scores(mc) = final_score;     % Calculate final score
 end
 
-score_adaptive = mean(final_scores); % average over all MC samples, as we are randomly sampling the true parameter
+score_adaptive = mean(final_scores);
 
 end
 
