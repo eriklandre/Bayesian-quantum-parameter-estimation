@@ -1,173 +1,191 @@
-function score_adaptive = thermometry_greedy(No, k_copies, n_monte_carlo, t)
+function score_adaptive = thermometry_greedy_parallelized(No, k_copies, n_monte_carlo, t)
 % No: number of outcomes of the measurement
-% k_copies: number of uses of the channel to use in the Greedy algorithm
+% k_copies: number of uses of the channel
 % n_monte_carlo: number of Monte Carlo samples
-% t: time parameter of the thermometry channel
+% t: index of the time point
 
 d = 2;
 
 Tmin = 0.1;     % minimum temperature
 Tmax = 2;       % maximum temperature
-Nh = 2500;      % number of hypotheses
-Nt = 100;       % number of time steps
+Nh   = 2500;     % number of hypotheses
+Nt   = 100;     % number of time steps
 
-time = 0:(1/(Nt-1)):1;  % time vector
+time = 0:(1/(Nt-1)):1;   % time vector
+time_value = time(t);
 
-theta_k(1:Nh) = Tmin:(Tmax-Tmin)/(Nh-1):Tmax;       % true parameter discretization
+theta_k(1:Nh) = Tmin:(Tmax-Tmin)/(Nh-1):Tmax;   % hypothesis grid 
 
-p_initial(1:Nh,1) = 1/Nh;      % uniform prior
+p_initial(1:Nh,1) = 1/Nh;            % uniform prior
 
+% Precompute Choi operators
 Ck = zeros(d^2,d^2,Nh);
 for k=1:Nh
     Ck(:,:,k) = ChoiOperatorThermo(theta_k(k),0.1,2,time(t));       % Choi of the true parameter theta_k
 end
 
-score_adaptive = run_adaptive_monte_carlo(p_initial, theta_k, Ck, No, k_copies, n_monte_carlo, t);      % Run the MC simulation
-fprintf('Adaptive score: %.6f\n', score_adaptive); % score
-
+% Run MC simulation in parallel
+[score_adaptive, results] = run_adaptive_monte_carlo_parallel(p_initial, theta_k, Ck, No, k_copies, n_monte_carlo, time_value);
 end
 
-function score_adaptive = run_adaptive_monte_carlo(p_updated, theta_k, Ck, No, k_copies, n_monte_carlo, t)
+function [score_adaptive, results] = run_adaptive_monte_carlo_parallel(p_initial, theta_k, Ck, No, k_copies, n_monte_carlo, time_value)
 
 d = 2;
-Tmin = 0.1;    
-Tmax = 2;       
-
-Nt = 100;      
-
-time = 0:(1/(Nt-1)):1;
-
-Nh = length(p_updated);
+Nh = length(p_initial);
 
 final_scores = zeros(n_monte_carlo, 1);
 
-for mc = 1:n_monte_carlo
-    fprintf('Monte Carlo run %d of %d...\n', mc, n_monte_carlo);
-    theta_true = sample_true_parameter(p_updated, theta_k);      % random sample of the true parameter
+% --- Start parallel pool if needed
+pool = gcp('nocreate');
+if isempty(pool)
+    parpool;  % uses default number of workers
+end
 
-    p_current = p_updated;
-    theta_i_prev = [];
-    for copy = 1:k_copies
-        if copy == 1
-            theta_i(1:No) = Tmin:(Tmax-Tmin)/(No-1):Tmax;
-        else
-            fprintf('[MC %d] Copy 2 START - estimators:\n', mc);
-            theta_i = theta_i_prev;
+parfor mc = 1:n_monte_carlo
+    % Give each MC run its own substream (reproducible + independent)
+    s = RandStream('Threefry','Seed','shuffle');
+    s.Substream = mc;
+    RandStream.setGlobalStream(s);
+
+    final_scores(mc) = single_mc_run(p_initial, theta_k, Ck, No, k_copies, time_value, d, Nh);
+end
+
+score_adaptive = mean(final_scores);
+
+% Package results
+results.final_scores   = final_scores;
+results.score_adaptive = score_adaptive;
+results.No             = No;
+results.k_copies       = k_copies;
+results.n_monte_carlo  = n_monte_carlo;
+results.time_value     = time_value;
+results.theta_grid     = theta_k;
+
+end
+
+function score_run = single_mc_run(p_initial, theta_k, Ck, No, k_copies, time_value, d, Nh)
+% One independent MC run of the greedy adaptive protocol
+
+Tmin = min(theta_k);
+Tmax = max(theta_k);
+
+% sample true parameter
+theta_true = sample_true_parameter(p_initial, theta_k);
+
+p_current = p_initial;
+theta_i_prev = [];
+
+for copy = 1:k_copies
+
+    % Initial estimator grid
+    if copy == 1
+        theta_i(1:No) = Tmin:(Tmax-Tmin)/(No-1):Tmax;
+    else
+        theta_i = theta_i_prev;
+    end
+
+    % Build Xi
+    Xi = zeros(d^2,d^2,No);
+    r = zeros(No,Nh);
+    for i=1:No
+        for k=1:Nh
+            r(i,k) = ((theta_k(k)-theta_i(i))/theta_k(k))^2; % cost function (relative error)
+            Xi(:,:,i) = Xi(:,:,i) + p_current(k)*r(i,k)*Ck(:,:,k);      % computing the Xi's
         end
-        
+    end
+
+    % Optimize tester
+    [T_adaptive, current_score, ~] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],1,2,-1);
+
+    % Seesaw: optimize estimators given the tester
+    T_temp = T_adaptive;
+    gap = 1;
+    precision = 1e-6;
+    old_score = current_score;
+
+    while gap > precision
+
+        theta_i = estimator_optimization(p_current, T_temp, Ck, theta_k);
         Xi = zeros(d^2,d^2,No);
         r = zeros(No,Nh);
         for i=1:No
             for k=1:Nh
-                %r(i,k) = ((theta_k(k)-theta_i(i)))^2;    % cost function (MSE)
-                r(i,k) = ((theta_k(k)-theta_i(i))/theta_k(k))^2; % cost function (relative error)
-                Xi(:,:,i) = Xi(:,:,i) + p_current(k)*r(i,k)*Ck(:,:,k);      % computing the Xi's
+                r(i,k) = ((theta_k(k)-theta_i(i))/theta_k(k))^2; % relative error
+                Xi(:,:,i) = Xi(:,:,i) + p_current(k)*r(i,k)*Ck(:,:,k);
             end
         end
+
+        [T_temp, score_temp, ~] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],1,2,-1);
+
+        gap = abs(old_score - score_temp);
+        old_score = score_temp;
         
-        [T_adaptive, current_score, ~] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],1,2,-1);      % SDP optimization to get the optimal tester and score
-
-        % SEESAW algorithm (takes as input the optimal tester and optimizes over estimators)
-        T_temp = T_adaptive;
-        gap = 1;
-        precision = 10^(-4); % decrease to 10^(-6) if needed
-        rounds = 0;
-        old_score = current_score;
-        flag_value = 0;
-
-        while gap>precision
-            
-            rounds = rounds + 1;
-            
-            [estimators] = estimator_optimization(p_current,T_temp,Ck,theta_k);         % optimization over the estimators
-            
-            theta_i = estimators;
-            Xi = zeros(d^2,d^2,No);
-            r = zeros(No,Nh);
-            for i=1:No
-                for k=1:Nh
-                    %r(i,k) = ((theta_k(k)-theta_i(i)))^2;  % MSE
-                    r(i,k) = ((theta_k(k)-theta_i(i))/theta_k(k))^2; % relative error
-                    Xi(:,:,i) = Xi(:,:,i) + p_current(k)*r(i,k)*Ck(:,:,k);
-                end
-            end
-            
-            [T_temp,score_temp,flag] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],1,2,-1);        % SDP optimization to get the optimal tester and score
-            
-            if flag.problem~=0
-                sdp_problem = flag.problem
-                info        = flag.info
-                flag_value = 1;
-                %pause
-            end
-            
-            gap         = abs(old_score - score_temp);
-            old_score   = score_temp;
-            %pause
-        end
-
-        T_adaptive   = T_temp;
-        current_score = score_temp;
-        theta_i_prev = theta_i;
-        
-        C_true = ChoiOperatorThermo(theta_true,0.1,2,time(t));      % Choi operator of the true parameter (randomly sampled at the beginning)
-        probs = zeros(No, 1);
-        for i = 1:No
-            probs(i) = real(trace(T_adaptive(:,:,i) * C_true));     % Simulate measurement with true parameter
-        end
-        probs = probs / sum(probs);
-        
-        % Sample random measurement outcome
-        cumulative_probs = cumsum(probs);
-        rand_val = rand();
-        outcome_idx = find(cumulative_probs >= rand_val, 1, 'first');
-
-        if copy < k_copies
-            % Update posterior (Bayes rule)
-            likelihood = zeros(Nh,1);
-            for k = 1:Nh
-                likelihood(k) = real(trace(T_adaptive(:,:,outcome_idx) * Ck(:,:,k)));
-            end
-            p_current = likelihood .* p_current;
-            p_current = p_current / sum(p_current);
-
-        else
-            % LAST COPY: realized cost for this run
-            theta_hat = theta_i(outcome_idx);          % estimator associated to the observed outcome
-            final_scores(mc) = ((theta_true - theta_hat)/theta_true)^2;   % relative error cost
-        end
     end
+
+    T_adaptive = T_temp;
+    theta_i_prev = theta_i;
+
+    % simulate measurement outcome with true parameter
+    C_true = ChoiOperatorThermo(theta_true, 0.1, 2, time_value);
+
+    probs = zeros(No, 1);
+    for i = 1:No
+        probs(i) = real(trace(T_adaptive(:,:,i) * C_true));
+    end
+    probs = probs / sum(probs);
+
+    outcome_idx = sample_discrete(probs);
+
+    if copy < k_copies
+        % Bayes update
+        likelihood = zeros(Nh, 1);
+        for k = 1:Nh
+            likelihood(k) = real(trace(T_adaptive(:,:,outcome_idx) * Ck(:,:,k)));
+        end
+        p_current = likelihood .* p_current;
+        p_current = p_current / sum(p_current);
+    else
+        % LAST COPY: realized cost for THIS MC run
+        theta_hat = theta_i(outcome_idx);
+        score_run = ((theta_true - theta_hat) / theta_true)^2;
+    end
+
 end
 
-score_adaptive = mean(final_scores); % average over all MC samples, as we are randomly sampling the true parameter
-
 end
+
+function idx = sample_discrete(p)
+% samples an index from probability vector p
+c = cumsum(p(:));
+u = rand();
+idx = find(c >= u, 1, 'first');
+end
+
 
 function theta_true = sample_true_parameter(p, theta_k)
-    % p: prior distribution
-    % theta_k: grid of hypotheses
-
-    p = p(:);       
-    c = cumsum(p / sum(p));  
-    u = rand();
-    idx = find(c >= u, 1, 'first');
-    theta_true = theta_k(idx);
+% samples theta_true from the discrete prior p
+c = cumsum(p(:) / sum(p));
+u = rand();
+idx = find(c >= u, 1, 'first');
+theta_true = theta_k(idx);
 end
 
-function [estimators] = estimator_optimization(p,T,Ck,theta_k)
 
-Nh = max(size(p));
+function [estimators] = estimator_optimization(p,T,Ck,theta_k)
+% Given tester T, compute optimal estimators
+Nh = length(p);
 No = size(T,3);
 
-post = zeros(Nh,No);
-estimators = zeros(No,1);
+post = zeros(Nh, No);
 
 for k = 1:Nh
     for i = 1:No
-        post(k,i) = p(k)*real(trace(T(:,:,i)*Ck(:,:,k)));
+        post(k,i) = p(k) * real(trace(T(:,:,i) * Ck(:,:,k)));
     end
 end
-post = post./sum(post,1);
+post = post ./ sum(post,1);
+
+estimators = zeros(No,1);
 
 for i = 1:No
     num_1 = 0;
@@ -176,39 +194,17 @@ for i = 1:No
         num_1 = num_1 + post(k,i) * (1/theta_k(k));
         den_1 = den_1 + post(k,i) * (1/(theta_k(k)^2));
     end
-    estimators(i,1) = num_1 / den_1;
+    estimators(i) = num_1 / den_1;
 end
 
 end
 
-function [estimators] = estimator_optimization_MSE(p,T,Ck,theta_k) % use this function if the reward is MSE
-
-Nh = max(size(p));
-No = size(T,3);
-
-post = zeros(Nh,No);
-estimators = zeros(No,1);
-
-for k = 1:Nh
-    for i = 1:No
-        post(k,i) = p(k)*real(trace(T(:,:,i)*Ck(:,:,k)));
-    end
-end
-post = post./sum(post,1);
-
-for i = 1:No
-    for k = 1:Nh
-        estimators(i,1) = estimators(i,1) + post(k,i)*theta_k(k);
-    end
-end
-
-end
 
 function J = ChoiOperatorThermo(T,eps,g,t)
-
-% explicit form of Choi state
+% Choi operator of the thermometry channel at temperature T
 N = 1/(exp(eps/T) - 1);
 gamma = g*(2*N+1);
+
 a = (N+N*exp(-gamma*t)+1)/(2*(2*N+1));
 b = ((1-exp(-gamma*t))*(N+1))/(2*(2*N+1));
 c = (N-N*exp(-gamma*t))/(2*(2*N+1));
@@ -221,8 +217,7 @@ J = diag(diag_terms);
 J(1,4) = off_diag_term;
 J(4,1) = off_diag_term';
 
-% change choi states to choi matrices + swap parties for consistency with the notes
-J = 2 * J; %this is to include a 2 factor missing in this definition of the Choi
-J = Swap(J); %this is to use the definition C_theta [|i><j|] = \sum_ij |i><j| x E[|i><j|] and not the other way around
+J = 2 * J;
+J = Swap(J);
 
-end  
+end
