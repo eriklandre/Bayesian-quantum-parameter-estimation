@@ -15,13 +15,7 @@ To be run in MATLAB, [QETLAB](http://www.qetlab.com/), [SeDuMi](https://github.c
 **Add description**
 - [thermometry_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/thermometry_kcopy.m):
 **Add description**
-- [unitary_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_greedy.m):
-**Add description**
-- [unitary_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_kcopy.m):
-**Add description**
-- [unitary_greedy_haar.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_greedy_haar.m):
-**Add description**
-- [unitary_kcopy_haar.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_kcopy_haar.m):
+- [unitary_and_noise_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_and_noise_greedy_haar.m):
 **Add description**
 - [unitary_and_noise_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_and_noise_kcopy.m):
 **Add description**
