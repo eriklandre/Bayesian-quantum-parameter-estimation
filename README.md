@@ -3,7 +3,7 @@
 
 This repository contains all the code files used to obtain the data in the article ---
 
-To be run in MATLAB, [QETLAB](http://www.qetlab.com/), [SeDuMi](https://github.com/sqlp/sedumi) and [Mosek](https://docs.mosek.com/11.0/toolbox/index.html), as well as the [Parallel Computing Toolbox][https://www.mathworks.com/products/parallel-computing.html] are required. The following files are included in the repository:
+To be run in MATLAB, [QETLAB](http://www.qetlab.com/), [SeDuMi](https://github.com/sqlp/sedumi) and [Mosek](https://docs.mosek.com/11.0/toolbox/index.html), as well as the [Parallel Computing Toolbox](https://www.mathworks.com/products/parallel-computing.html) are required. The following files are included in the repository:
 
 - [testeroptimization_sdp_kcopy_seesaw.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/testeroptimization_sdp_kcopy_seesaw.m):
 **Add description**
