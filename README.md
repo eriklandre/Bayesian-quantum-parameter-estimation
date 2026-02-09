@@ -1,7 +1,7 @@
-## Codes used in: *[Bayesian quantum parameter estimation: Strict hierarchy between memory assisted strategies](https://arxiv.org/abs/2601?.-----)*
+## Codes used in: *[Strategy optimization for Bayesian quantum parameter estimation with finite copies: Adaptive greedy, parallel, sequential and general strategies](https://arxiv.org/abs/2602.-----)*
 #### Erik L. André, Jessica Bavaresco and Mohammad Mehboudi
 
-This repository contains all the code files used to obtain the data in the article ---
+This repository contains all the code files used to obtain the data in the article "Strategy optimization for Bayesian quantum parameter estimation with finite copies: Adaptive greedy, parallel, sequential and general strategies"
 
 To be run in MATLAB, [QETLAB](http://www.qetlab.com/), [SeDuMi](https://github.com/sqlp/sedumi) and [Mosek](https://docs.mosek.com/11.0/toolbox/index.html), as well as the [Parallel Computing Toolbox](https://www.mathworks.com/products/parallel-computing.html) are required. The following files are included in the repository:
 
