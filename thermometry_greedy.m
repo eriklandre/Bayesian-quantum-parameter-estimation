@@ -18,7 +18,6 @@ theta_k(1:Nh) = Tmin:(Tmax-Tmin)/(Nh-1):Tmax;   % hypothesis grid
 
 p_initial(1:Nh,1) = 1/Nh;            % uniform prior
 
-% Precompute Choi operators
 Ck = zeros(d^2,d^2,Nh);
 for k=1:Nh
     Ck(:,:,k) = ChoiOperatorThermo(theta_k(k),0.1,2,time(t));       % Choi of the true parameter theta_k
@@ -41,14 +40,14 @@ Nh = length(p_initial);
 
 final_scores = zeros(n_monte_carlo, 1);
 
-% --- Start parallel pool if needed
+% Start parallel pool
 pool = gcp('nocreate');
 if isempty(pool)
     parpool;  % uses default number of workers
 end
 
 parfor mc = 1:n_monte_carlo
-    % Give each MC run its own substream (reproducible + independent)
+    % Give each MC run its own substream
     s = RandStream('Threefry','Seed','shuffle');
     s.Substream = mc;
     RandStream.setGlobalStream(s);
@@ -58,7 +57,7 @@ end
 
 score_adaptive = mean(final_scores);
 
-% Package results
+% Results
 results.final_scores   = final_scores;
 results.score_adaptive = score_adaptive;
 results.No             = No;
@@ -75,19 +74,16 @@ function score_run = single_mc_run(p_initial, theta_k, Ck, No, k_copies, time_va
 Tmin = min(theta_k);
 Tmax = max(theta_k);
 
-% sample true parameter
-theta_true = sample_true_parameter(p_initial, theta_k);
+theta_true = sample_true_parameter(p_initial, theta_k); % sample true parameter
 
 p_current = p_initial;
 theta_i_prev = [];
 
 for copy = 1:k_copies
-
-    % Initial estimator grid
     if copy == 1
-        theta_i(1:No) = Tmin:(Tmax-Tmin)/(No-1):Tmax;
+        theta_i(1:No) = Tmin:(Tmax-Tmin)/(No-1):Tmax; % Initial estimator grid
     else
-        theta_i = theta_i_prev;
+        theta_i = theta_i_prev; % update estimators via the seesaw
     end
 
     % Build Xi
@@ -95,13 +91,12 @@ for copy = 1:k_copies
     r = zeros(No,Nh);
     for i=1:No
         for k=1:Nh
-            r(i,k) = ((theta_k(k)-theta_i(i))/theta_k(k))^2; % cost function (relative error)
-            Xi(:,:,i) = Xi(:,:,i) + p_current(k)*r(i,k)*Ck(:,:,k);      % computing the Xi's
+            r(i,k) = ((theta_k(k)-theta_i(i))/theta_k(k))^2; % cost function (relative MSE)
+            Xi(:,:,i) = Xi(:,:,i) + p_current(k)*r(i,k)*Ck(:,:,k);    
         end
     end
 
-    % Optimize tester
-    [T_adaptive, current_score, ~] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],1,2,-1);
+    [T_adaptive, current_score, ~] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],1,2,-1); % Tester optimization
 
     % Seesaw: optimize estimators given the tester
     T_temp = T_adaptive;
@@ -110,8 +105,7 @@ for copy = 1:k_copies
     old_score = current_score;
 
     while gap > precision
-
-        theta_i = estimator_optimization(p_current, T_temp, Ck, theta_k);
+        theta_i = estimator_optimization(p_current, T_temp, Ck, theta_k); % Optimizing the estimators
         Xi = zeros(d^2,d^2,No);
         r = zeros(No,Nh);
         for i=1:No
@@ -121,9 +115,9 @@ for copy = 1:k_copies
             end
         end
 
-        [T_temp, score_temp, ~] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],1,2,-1);
+        [T_temp, score_temp, ~] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],1,2,-1); % Reoptimizing the tester
 
-        gap = abs(old_score - score_temp);
+        gap = abs(old_score - score_temp); % Keep running the algorithm until the score converges (given the preset precision)
         old_score = score_temp;
         
     end
@@ -131,8 +125,7 @@ for copy = 1:k_copies
     T_adaptive = T_temp;
     theta_i_prev = theta_i;
 
-    % simulate measurement outcome with true parameter
-    C_true = ChoiOperatorThermo(theta_true, 0.1, 2, time_value);
+    C_true = ChoiOperatorThermo(theta_true, 0.1, 2, time_value); % simulate measurement outcome with true parameter
 
     probs = zeros(No, 1);
     for i = 1:No
@@ -140,18 +133,17 @@ for copy = 1:k_copies
     end
     probs = probs / sum(probs);
 
-    outcome_idx = sample_discrete(probs);
+    outcome_idx = sample_discrete(probs); % random measurement outcome
 
     if copy < k_copies
-        % Bayes update
         likelihood = zeros(Nh, 1);
         for k = 1:Nh
             likelihood(k) = real(trace(T_adaptive(:,:,outcome_idx) * Ck(:,:,k)));
         end
-        p_current = likelihood .* p_current;
+        p_current = likelihood .* p_current; % Bayes update
         p_current = p_current / sum(p_current);
     else
-        % LAST COPY: realized cost for THIS MC run
+        % last copy: realized cost for this MC run
         theta_hat = theta_i(outcome_idx);
         score_run = ((theta_true - theta_hat) / theta_true)^2;
     end
