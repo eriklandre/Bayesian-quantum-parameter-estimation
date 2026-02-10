@@ -1,5 +1,4 @@
-function [T,score] = unitary_and_noise_kcopy(method, ncopies, strategy, p)
-% set method = 1, 2, or 3, to choose desired method
+function [T,score] = unitary_and_noise_kcopy(ncopies, strategy, p)
 
 d = 2;
 
