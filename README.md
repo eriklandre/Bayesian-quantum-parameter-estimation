@@ -10,10 +10,10 @@ To be run in MATLAB, [QETLAB](http://www.qetlab.com/), [SeDuMi](https://github.c
 - [phaseestimation_and_noise_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/phaseestimation_and_noise_kcopy.m):
 **Solves the $k$-copy noisy phase estimation problem (set $p=0$ for the usual phase estimation problem)**
 - [thermometry_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/thermometry_greedy.m):
-**Solves the adaptive \textit{greedy} thermometry problem**
+**Solves the adaptive greedy thermometry problem**
 - [thermometry_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/thermometry_kcopy.m):
 **Solves the $k$-copy thermometry problem**
 - [unitary_and_noise_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_and_noise_greedy.m):
-**Solves the adaptive \textit{greedy} noisy SU(2) estimation problem (set $p=0$ for the usual SU(2) estimation problem)**
+**Solves the adaptive greedy noisy SU(2) estimation problem (set $p=0$ for the usual SU(2) estimation problem)**
 - [unitary_and_noise_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_and_noise_kcopy.m):
 **Solves the $k$-copy noisy SU(2) estimation problem (set $p=0$ for the usual SU(2) estimation problem)**
