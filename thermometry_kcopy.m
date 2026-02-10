@@ -50,9 +50,9 @@ for No=No_initial:No_final
         end
     end
     
-    [T{No-No_initial+1,t},score(No-No_initial+1,t),~] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],ncopies,strategy,-1);     % SDP optimization to get the optimal tester and score
+    [T{No-No_initial+1,t},score(No-No_initial+1,t),~] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],ncopies,strategy,-1);     % Tester optimization
     
-    %%%%%%%%% M3: SEESAW algorithm (takes as input the optimal tester and optimizes over estimators) %%%%%%%%%
+    % Seesaw algorithm
      T_temp = T{No-No_initial+1,t};
      
      gap = 1;
@@ -65,9 +65,9 @@ for No=No_initial:No_final
          
          rounds(t,1) = rounds(t,1) + 1;
          
-         %%%%% step 1 %%%%%
+         % Step 1: optimizing the estimators
          
-         [estimators] = estimator_optimization(p,T_temp,Ck,theta_k,ncopies);     % optimization over the estimator
+         [estimators] = estimator_optimization(p,T_temp,Ck,theta_k,ncopies);     % Estimator optimization
          
          theta_i = estimators;
          Xi = zeros(d^(2*ncopies),d^(2*ncopies),No);
@@ -81,9 +81,9 @@ for No=No_initial:No_final
              end
          end
          
-         %%%%% step 2 %%%%%
+         % Step 2: reoptimizing the tester
          
-         [T_temp,score_temp,flag] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],ncopies,strategy,-1);      % SDP optimization to get the optimal tester and score
+         [T_temp,score_temp,flag] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],ncopies,strategy,-1);      % Reoptimizing the tester
          
          if flag.problem~=0
              sdp_problem = flag.problem
@@ -104,7 +104,7 @@ end
 end
 
 function [estimators] = estimator_optimization(p,T,Ck,theta_k,ncopies)
-
+% Estimator optimization given relative MSE as cost function
 Nh = max(size(p));
 No = size(T,3);
 
@@ -126,30 +126,6 @@ for i = 1:No
         den_1 = den_1 + post(k,i) * (1/(theta_k(k)^2));
     end
     estimators(i,1) = num_1 / den_1;
-end
-
-end
-
-function [estimators] = estimator_optimization_MSE(p,T,Ck,theta_k,ncopies) % use this function if the reward is MSE
-%%%% estimator optimization for thermometry %%%%
-
-Nh = max(size(p));
-No = size(T,3);
-
-post = zeros(Nh,No);
-estimators = zeros(No,1);
-
-for k = 1:Nh
-    for i = 1:No
-        post(k,i) = p(k)*real(trace(T(:,:,i)*Tensor(Ck(:,:,k),ncopies)));
-    end
-end
-post = post./sum(post,1);
-
-for i = 1:No
-    for k = 1:Nh
-        estimators(i,1) = estimators(i,1) + post(k,i)*theta_k(k);
-    end
 end
 
 end
