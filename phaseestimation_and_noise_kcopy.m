@@ -1,5 +1,4 @@
 function [T,score] = phaseestimation_and_noise_kcopy(No_initial, No_final, ncopies, strategy, p)
-% set method = 1, 2, or 3, to choose desired method
 
 d = 2;
 
