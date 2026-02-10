@@ -1,8 +1,6 @@
-function [T,score] = thermometry_kcopy(method,PPT,t,No_initial,No_final,ncopies,strategy)
+function [T,score] = thermometry_kcopy(t,No_initial,No_final,ncopies,strategy)
 % ncopies: number of copies of the channel
-% set method = 1, 2, or 3, to choose desired method
 % set strategy = 1, 2, or 3, to choose desired strategy (PARALLEL, SEQUENTIAL, GENERAL)
-% set PPT = 0 for standard problem and PPT = 1 for no-entanglement
 % t: fixed time for the unitary evolution
 
 d = 2;
@@ -20,21 +18,13 @@ T     = cell(No_final-No_initial+1,Nt);
 for No=No_initial:No_final
    
     No = No
-    
-    %%%%%%%%% M1 %%%%%%%%%
-    if method==1
-        Nh = No;  
-        
-    %%%%%%%%% M2 and M3 %%%%%%%%%   
-    else
-        Nh = 1000; 
-    end
+    Nh = 1000; 
    
     theta_i(1:No) = Tmin:(Tmax-Tmin)/(No-1):Tmax;       % uniform distribution of the estimator
     theta_k(1:Nh) = Tmin:(Tmax-Tmin)/(Nh-1):Tmax;       % uniform discretization of the true parameter
     
-    p(1:Nh,1) = 1/Nh;      % uniform prior
-    %p = prior_p0_density(theta_k, Tmin, Tmax, -100); % custom prior
+    %p(1:Nh,1) = 1/Nh;      % uniform prior
+    p = prior_p0_density(theta_k, Tmin, Tmax, -100); % custom prior
     
     % gaussian prior %
     % p = normpdf(theta_k,0,1);
@@ -60,59 +50,55 @@ for No=No_initial:No_final
         end
     end
     
-    [T{No-No_initial+1,t},score(No-No_initial+1,t),~] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],ncopies,strategy,-1, PPT);     % SDP optimization to get the optimal tester and score
+    [T{No-No_initial+1,t},score(No-No_initial+1,t),~] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],ncopies,strategy,-1);     % SDP optimization to get the optimal tester and score
     
-    %%%%%%%%% M3: SEESAW algorithm (takes as input the optimal tester and optimizes over estimators) %%%%%%%%% 
-    if method==3
-        
-        T_temp = T{No-No_initial+1,t};
-        
-        gap = 1;
-        precision = 10^(-6);
-        rounds(t,1) = 0;
-        old_score = score(No-No_initial+1,t);
-        flag_value = 0;
-        
-        while gap>precision
-            
-            rounds(t,1) = rounds(t,1) + 1;
-            
-            %%%%% step 1 %%%%%
-            
-            [estimators] = estimator_optimization(p,T_temp,Ck,theta_k,ncopies);     % optimization over the estimator
-            
-            theta_i = estimators;
-            Xi = zeros(d^(2*ncopies),d^(2*ncopies),No);
-            r = zeros(No,Nh);
-            for i=1:No
-                for k=1:Nh
-                    %r(i,k) = cos((theta_k(k)-theta_i(i))/2)^2; % cosine reward (like in phase estimation)
-                    r(i,k) = ((theta_k(k)-theta_i(i))/theta_k(k))^2; % relative error
-                    %r(i,k) = ((theta_k(k)-theta_i(i)))^2; % MSE
-                    Xi(:,:,i) = Xi(:,:,i) + p(k)*r(i,k)*Tensor(Ck(:,:,k),ncopies);
-                end
-            end
-            
-            %%%%% step 2 %%%%%
-            
-            [T_temp,score_temp,flag] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],ncopies,strategy,-1, PPT);      % SDP optimization to get the optimal tester and score
-            
-            if flag.problem~=0
-                sdp_problem = flag.problem
-                info        = flag.info
-                flag_value = 1;
-                %pause
-            end
-            
-            gap         = abs(old_score - score_temp);
-            old_score   = score_temp;
-            %pause
-        end
-        
-        T{No-No_initial+1,t} = T_temp;
-        score(No-No_initial+1,t) = score_temp;
-        
-    end
+    %%%%%%%%% M3: SEESAW algorithm (takes as input the optimal tester and optimizes over estimators) %%%%%%%%%
+     T_temp = T{No-No_initial+1,t};
+     
+     gap = 1;
+     precision = 10^(-6);
+     rounds(t,1) = 0;
+     old_score = score(No-No_initial+1,t);
+     flag_value = 0;
+     
+     while gap>precision
+         
+         rounds(t,1) = rounds(t,1) + 1;
+         
+         %%%%% step 1 %%%%%
+         
+         [estimators] = estimator_optimization(p,T_temp,Ck,theta_k,ncopies);     % optimization over the estimator
+         
+         theta_i = estimators;
+         Xi = zeros(d^(2*ncopies),d^(2*ncopies),No);
+         r = zeros(No,Nh);
+         for i=1:No
+             for k=1:Nh
+                 %r(i,k) = cos((theta_k(k)-theta_i(i))/2)^2; % cosine reward (like in phase estimation)
+                 r(i,k) = ((theta_k(k)-theta_i(i))/theta_k(k))^2; % relative error
+                 %r(i,k) = ((theta_k(k)-theta_i(i)))^2; % MSE
+                 Xi(:,:,i) = Xi(:,:,i) + p(k)*r(i,k)*Tensor(Ck(:,:,k),ncopies);
+             end
+         end
+         
+         %%%%% step 2 %%%%%
+         
+         [T_temp,score_temp,flag] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],ncopies,strategy,-1);      % SDP optimization to get the optimal tester and score
+         
+         if flag.problem~=0
+             sdp_problem = flag.problem
+             info        = flag.info
+             flag_value = 1;
+             %pause
+         end
+         
+         gap         = abs(old_score - score_temp);
+         old_score   = score_temp;
+         %pause
+     end
+     
+     T{No-No_initial+1,t} = T_temp;
+     score(No-No_initial+1,t) = score_temp;
 end
 
 end
