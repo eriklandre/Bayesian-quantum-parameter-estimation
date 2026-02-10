@@ -63,16 +63,14 @@ end
 
 p0 = p0 / sum(p0);
 
-% Precompute (T, theta, Ci) for the first copy
-[T1, theta1, Ci1] = precompute_copy1_seesaw(no, p0, CkU, CkN, qk);
+[T1, theta1, Ci1] = precompute_copy1_seesaw(no, p0, CkU, CkN, qk); % tester and estimator optimization for the first copy
 
-% Run adaptive MC (parallel)
-[score_adaptive, results] = run_adaptive_monte_carlo_parallel(p0, theta_k, CkU, CkN, qk, no, k_copies, n_monte_carlo, pAD, T1, theta1, Ci1);
+[score_adaptive, results] = run_adaptive_monte_carlo_parallel(p0, theta_k, CkU, CkN, qk, no, k_copies, n_monte_carlo, pAD, T1, theta1, Ci1); % Run adaptive MC
 
 end
 
 function [T1, theta1, Ci1] = precompute_copy1_seesaw(no, p0, CkU, CkN, qk)
-
+% Function returning the optimal tester and estimators for the first copy
 d = 2;
 [X,Y,Z] = make_paulis;
 
@@ -85,7 +83,6 @@ theta_grid(:,1) = estimators(1:no);
 theta_grid(:,2) = estimators(1:no);
 theta_grid(:,3) = estimators(1:no);
 
-% Build Ci from the separable grid (No outcomes)
 Ci = zeros(d^2,d^2,No);
 idx = 0;
 for ix = 1:no
@@ -98,7 +95,7 @@ for ix = 1:no
     end
 end
 
-% Seesaw until convergence
+% Seesaw method
 gap = 1;
 precision = 1e-6;
 rounds = 0;
@@ -168,20 +165,20 @@ parfor mc = 1:n_monte_carlo
     theta1_loc = theta1_const.Value;
     Ci1_loc = Ci1_const.Value;
 
-    % Sample true theta from prior (discrete)
-    theta_true = sample_true_parameter(p_current, theta_k_loc);
+    theta_true = sample_true_parameter(p_current, theta_k_loc); % Sample true theta from prior
 
-    theta_i_prev = [];   % will be No×3 list after first copy
+    theta_i_prev = []; % list of optimal estimators
 
     for copy = 1:k_copies
-        % Use precomputed copy-1 solution
+        % For the first copy, use the found solution
         if copy == 1
             T_adaptive  = T1_loc;
             theta_i     = theta1_loc;   
             Ci          = Ci1_loc;      
         else
+        % Reoptimize for the rest of copies
             theta_i = theta_i_prev;
-
+            
             % Build Ci from No×3 list
             Ci = zeros(d^2,d^2,No);
             for ii = 1:No
@@ -190,16 +187,15 @@ parfor mc = 1:n_monte_carlo
                 Ci(:,:,ii) = kraus2choi(U);
             end
 
-            % Build Xi from current posterior and solve tester + seesaw
             Xi = build_Xi_from_estimators(p_current, Ci, CkU_loc, CkN_loc);
-            [T_temp, score_temp, ~] = testeroptimization_sdp_kcopy_seesaw(Xi, [d d], 1, 1, 1);
+            [T_temp, score_temp, ~] = testeroptimization_sdp_kcopy_seesaw(Xi, [d d], 1, 1, 1); % Tester optimization
 
             gap = 1;
             precision = 1e-6;
             old_score = score_temp;
 
             while gap > precision
-                theta_i = estimator_update_closedform(p_current, T_temp, CkN_loc, qk_loc);
+                theta_i = estimator_update_closedform(p_current, T_temp, CkN_loc, qk_loc); % Estimator optimization
                 Ci = zeros(d^2,d^2,No);
                 for ii = 1:No
                     th = theta_i(ii,:);
@@ -207,12 +203,11 @@ parfor mc = 1:n_monte_carlo
                     Ci(:,:,ii) = kraus2choi(U);
                 end
 
-                % Xi from posterior
                 Xi = build_Xi_from_estimators(p_current, Ci, CkU_loc, CkN_loc);
 
-                [T_new, score_new, flag] = testeroptimization_sdp_kcopy_seesaw(Xi, [d d], 1, 1, 1);
+                [T_new, score_new, flag] = testeroptimization_sdp_kcopy_seesaw(Xi, [d d], 1, 1, 1); % Reoptimizing the tester
 
-                gap = abs(old_score - score_new);
+                gap = abs(old_score - score_new); % Keep running until it converges (given the predefined precision)
                 old_score = score_new;
                 T_temp = T_new;
             end
@@ -228,7 +223,6 @@ parfor mc = 1:n_monte_carlo
         C_trueN = kraus2choi(cat(3, A0*U_true, A1*U_true));
         C_trueU = kraus2choi(U_true);
 
-        % Sample outcome from tester + true noisy channel
         probs = zeros(No,1);
         for ii = 1:No
             probs(ii) = real(trace(T_adaptive(:,:,ii) * C_trueN));
@@ -240,13 +234,12 @@ parfor mc = 1:n_monte_carlo
         else
             probs = probs / sp;
         end
-        outcome_idx = find(cumsum(probs) >= rand(), 1, 'first');
+        outcome_idx = find(cumsum(probs) >= rand(), 1, 'first'); % Sample measurement outcome 
 
-        % Bayesian update (except last copy)
         if copy < k_copies
             likelihood = zeros(Nh,1);
             for k = 1:Nh
-                likelihood(k) = real(trace(T_adaptive(:,:,outcome_idx) * CkN_loc(:,:,k)));
+                likelihood(k) = real(trace(T_adaptive(:,:,outcome_idx) * CkN_loc(:,:,k))); % Bayes' update
             end
             likelihood = max(likelihood, 0);
 
@@ -335,7 +328,7 @@ score = double(score);
 end
 
 function theta_true = sample_true_parameter(p, theta_k)
-% Sample true theta from discrete distribution p on the theta_k grid
+% Sample true theta
 cumulative_p = cumsum(p);
 u = rand();
 true_idx = find(cumulative_p >= u, 1, 'first');
@@ -347,7 +340,7 @@ theta_true = [theta_k(kx,1), theta_k(ky,2), theta_k(kz,3)];
 end
 
 function theta_est = estimator_update_closedform(p, T, CkN, qk)
-% optimization of the estimators given the tester T (closed-form solution)
+% Optimization of the estimators given the tester T (finding the eigenvector of K with the largest eigenvalue)
 No = size(T,3);
 Nh = length(p);
 
