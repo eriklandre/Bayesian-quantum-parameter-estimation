@@ -1,5 +1,6 @@
 function [T,score] = unitary_and_noise_kcopy(ncopies, strategy, p)
-
+% ncopies: number of copies
+% strategy = 1,2,3 for PAR, SEQ, ICO
 d = 2;
 
 [X,Y,Z] = make_paulis;
@@ -34,9 +35,8 @@ for no=no_initial:no_final
     theta_k(:,2) = discretization(1:nh); % theta_k y
     theta_k(:,3) = discretization(1:nh); % theta_k z
 
-    %Ck = zeros(d^2,d^2,Nh);
-    CkN = zeros(d^2,d^2,Nh);   % noisy channel choi (what you probe)
-    CkU = zeros(d^2,d^2,Nh);   % unitary-only choi (what you score against)
+    CkN = zeros(d^2,d^2,Nh);   % noisy channel Choi (for the measurement)
+    CkU = zeros(d^2,d^2,Nh);   % unitary-only choi (for the reward)
     p_initial  = zeros(Nh,1);
     qk = zeros(4,Nh);
     k = 0;
@@ -51,7 +51,7 @@ for no=no_initial:no_final
                 r   = sqrt(thx^2 + thy^2 + thz^2);
                 th  = [thx, thy, thz];
 
-                % Fundamental ball: only keep r <= pi (boundary has zero measure)
+                % Fundamental ball: only keep r <= pi
                 if r <= pi
                     % Haar density J(th) = (1/(2*pi^2)) * (sin r / r)^2  (with r->0 limit 1)
                     if r < 1e-12
@@ -67,33 +67,23 @@ for no=no_initial:no_final
                     KrausT{1,1} = A0*U; 
                     KrausT{2,1} = A1*U;
                     KrausU{1,1} = U;
-                    CkU(:,:,k)  = ChoiMatrix(KrausU);   % trace = 1 in your convention
-                    CkN(:,:,k) = ChoiMatrix(KrausT);   % normalized convention: trace(Ck)=1
+                    CkU(:,:,k)  = ChoiMatrix(KrausU);
+                    CkN(:,:,k) = ChoiMatrix(KrausT); 
                     qk(:,k)    = theta_to_quat(th(:));
                 else
-                    % outside fundamental domain -> zero weight (can leave Ck(:,:,k)=0)
+                    % outside fundamental domain
                     p_initial(k) = 0;
                 end
             end
         end
     end
 
-    % Normalize discrete prior to sum to 1
-    p_initial = p_initial / sum(p_initial);
+    p_initial = p_initial / sum(p_initial); % Normalization condition
     Ck_tens = zeros(d^(2*ncopies), d^(2*ncopies), Nh);
     for k=1:Nh
-        Ck_tens(:,:,k) = Tensor(CkN(:,:,k), ncopies);
+        Ck_tens(:,:,k) = Tensor(CkN(:,:,k), ncopies); % Tensor product of true Choi operators
     end
-    % Ci = zeros(d^2,d^2,No);
-    % i=0;
-    % for ix=1:no
-    %     for iy=1:no
-    %         for iz=1:no
-    %             i = i+1;
-    %             Ci(:,:,i) = kraus2choi(expm(-1i*(theta_i(ix,1)*X+theta_i(iy,2)*Y+theta_i(iz,3)*Z)));
-    %         end 
-    %     end
-    % end
+
     Ci = zeros(d^2,d^2,No);
     i = 0;
     for ix = 1:no
@@ -108,24 +98,25 @@ for no=no_initial:no_final
                 if r <= pi
                     U = expm(-1i*( thx_est*X + thy_est*Y + thz_est*Z ));
                     KrausU{1,1} = U;
-                    Ci(:,:,i) = ChoiMatrix(KrausU);
+                    Ci(:,:,i) = ChoiMatrix(KrausU); % We also build the Choi of the estimators in the Haar fundamental ball
                 end
             end
         end
     end
+    
     Xi = zeros(d^(2*ncopies),d^(2*ncopies),No);
     r = zeros(No,Nh);
     for i=1:No
         for k=1:Nh
-            r(i,k) = (1/(d^2))*real(trace(Ci(:,:,i)*CkU(:,:,k))); %reward function
+            r(i,k) = (1/(d^2))*real(trace(Ci(:,:,i)*CkU(:,:,k))); % unitary fidelity reward function
             Xi(:,:,i) = Xi(:,:,i) + p_initial(k)*r(i,k)*Ck_tens(:,:,k);
         end
     end  
 
-    [T{no-no_initial+1,1},score(no-no_initial+1,1),~] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],ncopies,strategy,1);
+    [T{no-no_initial+1,1},score(no-no_initial+1,1),~] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],ncopies,strategy,1); % Tester optimization
     
     
-    %%%%%%%%% M3 (seesaw) %%%%%%%%% 
+    % Seesaw method 
     T_temp = T{no-no_initial+1,1};
         
     gap = 1;
@@ -138,51 +129,17 @@ for no=no_initial:no_final
         
         rounds = rounds + 1;
                    
-        %%%%% step 1 %%%%%
-        
-        % [estimators] = estimator_optimization(p_initial,T_temp,CkU,CkN,theta_k,ncopies);
-        
-        % theta_i = estimators;
-        
-        % Ci = zeros(d^2,d^2,No);
-        % i = 0;
-        % for ix = 1:no
-        %     for iy = 1:no
-        %         for iz = 1:no
-        %             i = i + 1;
-        %             thx_est = theta_i(ix,1);
-        %             thy_est = theta_i(iy,2);
-        %             thz_est = theta_i(iz,3);
-        %             r   = sqrt(thx_est^2 + thy_est^2 + thz_est^2);
-        %             % Fundamental ball: only keep r <= pi (boundary has zero measure)
-        %             if r <= pi
-        %                 U = expm(-1i*( thx_est*X + thy_est*Y + thz_est*Z ));
-        %                 KrausU{1,1} = U;
-        %                 Ci(:,:,i) = ChoiMatrix(KrausU);
-        %             end
-        %         end
-        %     end
-        % end
-
-        % Xi = zeros(d^(2*ncopies),d^(2*ncopies),No);
-        % r = zeros(No,Nh);
-        % for i=1:No
-        %     for k=1:Nh
-        %         r(i,k) = (1/(d^2))*real(trace(Ci(:,:,i)*CkU(:,:,k))); %reward function
-        %         Xi(:,:,i) = Xi(:,:,i) + p_initial(k)*r(i,k)*Tensor(CkN(:,:,k),ncopies);
-        %     end
-        % end  
+        % Step 1: optimizing the estimators
+         
         theta_i = estimator_update_closedform(p_initial, T_temp, Ck_tens, qk);
-        %t_estimator = toc
-        % Build Ci from theta_est
+        
         Ci = zeros(d^2,d^2,No);
         for i=1:No
             th = theta_i(i,:);
             U  = expm(-1i*( th(1)*X + th(2)*Y + th(3)*Z ));
-            Ci(:,:,i) = kraus2choi(U);
+            Ci(:,:,i) = kraus2choi(U); % Build Ci from theta_est
         end
 
-        % Rebuild Xi (called Xk_i in your original code)
         Xi = zeros(d^(2*ncopies), d^(2*ncopies), No);
         for i=1:No
             for k=1:Nh
@@ -191,9 +148,9 @@ for no=no_initial:no_final
             end
         end
         
-        %%%%% step 2 %%%%%
+        % Step 2: reoptimizing the tester
         
-        [T_temp,score_temp,flag] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],ncopies,strategy,1);
+        [T_temp,score_temp,flag] = testeroptimization_sdp_kcopy_seesaw(Xi,[d d],ncopies,strategy,1); % Tester optimization
         if flag.problem~=0
             sdp_problem = flag.problem
             info        = flag.info
@@ -201,7 +158,7 @@ for no=no_initial:no_final
             %pause
         end
         
-        gap       = abs(old_score - score_temp);
+        gap       = abs(old_score - score_temp); % Keep running until convergence (with the predefined precision)
         old_score = score_temp;
         %pause
     end
@@ -213,45 +170,8 @@ end
 
 end
 
-function [T_i,score, solution] = testeroptimization_sdp_kcopy_seesaw(Xk_i,d,k,strategy,minmax)
-
-
-din  = d(1);
-dout = d(2);
-No    = size(Xk_i,3);
-
-d = repmat([din dout], 1, k);
-
-yalmip('clear');
-
-T_i = sdpvar((din*dout)^k,(din*dout)^k,No,'hermitian','complex');
-
-F = [trace(sum(T_i,3))==dout^k];
-
-score = 0;
-for i=1:No
-    F = F + [T_i(:,:,i)>=0];
-    score = score + real(trace(T_i(:,:,i)*Xk_i(:,:,i)));
-end
-
-
-if strategy==1 % parallel
-    F = F + [sum(T_i,3)==ProjParProcess(sum(T_i,3),d)];
-elseif strategy==2 % sequential
-    F = F + [sum(T_i,3)==ProjSeqProcess(sum(T_i,3),d)];
-elseif strategy==3 % general
-    F = F + [sum(T_i,3)==ProjGenProcess(sum(T_i,3),d)];
-end
-
-solution = optimize(F,-minmax*score,sdpsettings('solver','mosek','verbose',0,'cachesolvers',1));
-
-T_i     = double(T_i);
-score = double(score);
-
-end
-
 function theta_est = estimator_update_closedform(p, T, Ck_tens, qk)
-
+% Estimator optimization (computing the eigenvector of K with the largest eigenvalue)
 No = size(T,3);
 Nh = length(p);
 
@@ -286,6 +206,7 @@ end
 end
 
 function q = theta_to_quat(theta)
+% Parameter vector to quaternion
 r = norm(theta);
 if r < 1e-12
     q = [1;0;0;0];
@@ -297,6 +218,7 @@ end
 end
 
 function theta = quat_to_theta(q)
+% Quaternion to parameter vector
 q = q / norm(q);
 q0 = max(min(q(1),1),-1);
 
