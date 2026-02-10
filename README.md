@@ -7,17 +7,13 @@ To be run in MATLAB, [QETLAB](http://www.qetlab.com/), [SeDuMi](https://github.c
 
 - [testeroptimization_sdp_kcopy_seesaw.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/testeroptimization_sdp_kcopy_seesaw.m):
 **Add description**
-- [phaseestimation_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/phaseestimation_greedy.m):
-**Add description**
-- [phaseestimation_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/phaseestimation_kcopy.m):
+- [phaseestimation_and_noise_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/phaseestimation_and_noise_kcopy.m):
 **Add description**
 - [thermometry_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/thermometry_greedy.m):
 **Add description**
 - [thermometry_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/thermometry_kcopy.m):
 **Add description**
-- [unitary_and_noise_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_and_noise_greedy_haar.m):
+- [unitary_and_noise_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_and_noise_greedy.m):
 **Add description**
 - [unitary_and_noise_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_and_noise_kcopy.m):
-**Add description**
-- [VanTrees_check.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/VanTrees_check.m):
 **Add description**
