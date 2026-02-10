@@ -1,4 +1,4 @@
-function score_adaptive = script_su2concatenation_greedy_final(no, k_copies, n_monte_carlo, pAD)
+function score_adaptive = unitary_and_noise_greedy(no, k_copies, n_monte_carlo, pAD)
 % no: number of outcomes of the measurement
 % k_copies: number of uses of the channel
 % n_monte_carlo: number of Monte Carlo samples
