@@ -6,14 +6,14 @@ This repository contains all the code files used to obtain the data in the artic
 To be run in MATLAB, [QETLAB](http://www.qetlab.com/), [SeDuMi](https://github.com/sqlp/sedumi) and [Mosek](https://docs.mosek.com/11.0/toolbox/index.html), as well as the [Parallel Computing Toolbox](https://www.mathworks.com/products/parallel-computing.html) are required. The following files are included in the repository:
 
 - [testeroptimization_sdp_kcopy_seesaw.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/testeroptimization_sdp_kcopy_seesaw.m):
-**Add description**
+**Optimizes the tester given $k$ copies of the channel encoding the unknown parameter(s)**
 - [phaseestimation_and_noise_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/phaseestimation_and_noise_kcopy.m):
-**Add description**
+**Solves the $k$-copy noisy phase estimation problem (set $p=0$ for the usual phase estimation problem)**
 - [thermometry_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/thermometry_greedy.m):
-**Add description**
+**Solves the adaptive \textit{greedy} thermometry problem**
 - [thermometry_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/thermometry_kcopy.m):
-**Add description**
+**Solves the $k$-copy thermometry problem**
 - [unitary_and_noise_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_and_noise_greedy.m):
-**Add description**
+**Solves the adaptive \textit{greedy} noisy SU(2) estimation problem (set $p=0$ for the usual SU(2) estimation problem)**
 - [unitary_and_noise_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_and_noise_kcopy.m):
-**Add description**
+**Solves the $k$-copy noisy SU(2) estimation problem (set $p=0$ for the usual SU(2) estimation problem)**
