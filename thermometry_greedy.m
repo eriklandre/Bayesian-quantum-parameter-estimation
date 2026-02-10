@@ -1,4 +1,4 @@
-function score_adaptive = thermometry_greedy_parallelized(No, k_copies, n_monte_carlo, t)
+function score_adaptive = thermometry_greedy(No, k_copies, n_monte_carlo, t)
 % No: number of outcomes of the measurement
 % k_copies: number of uses of the channel
 % n_monte_carlo: number of Monte Carlo samples
@@ -26,6 +26,12 @@ end
 
 % Run MC simulation in parallel
 [score_adaptive, results] = run_adaptive_monte_carlo_parallel(p_initial, theta_k, Ck, No, k_copies, n_monte_carlo, time_value);
+folder = 'results_files';
+if ~exist(folder,'dir'); 
+    mkdir(folder); 
+end
+save(fullfile(folder, sprintf('results_t=%d.mat', t)), 'results');
+
 end
 
 function [score_adaptive, results] = run_adaptive_monte_carlo_parallel(p_initial, theta_k, Ck, No, k_copies, n_monte_carlo, time_value)
