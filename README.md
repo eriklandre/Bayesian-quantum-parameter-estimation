@@ -12,7 +12,7 @@ To be run in MATLAB, [QETLAB](http://www.qetlab.com/), [SeDuMi](https://github.c
 - [thermometry_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/thermometry_greedy.m):
 **Solves the adaptive greedy thermometry problem**
   - [thermometry_greedy_cache.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/thermometry_greedy_cache.m):
-**Solves the adaptive greedy thermometry problem but solving the data for each outcome, such that the code preloads the necessary testers and estimators, yielding a smaller running time**
+**Solves the adaptive greedy thermometry problem but loading the data for each outcome, such that the code preloads the necessary testers and estimators, yielding a smaller running time**
 - [thermometry_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/thermometry_kcopy.m):
 **Solves the $k$-copy thermometry problem**
 - [unitary_and_noise_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_and_noise_greedy.m):
