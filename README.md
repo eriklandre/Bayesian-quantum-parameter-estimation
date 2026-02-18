@@ -1,4 +1,4 @@
-## Codes used in: *[Strategy optimization for Bayesian quantum parameter estimation with finite copies: Adaptive greedy, parallel, sequential and general strategies](https://arxiv.org/abs/2602.2602.09655)*
+## Codes used in: *[Strategy optimization for Bayesian quantum parameter estimation with finite copies: Adaptive greedy, parallel, sequential and general strategies](https://arxiv.org/abs/2602.09655)*
 #### Erik L. André, Jessica Bavaresco and Mohammad Mehboudi
 
 This repository contains all the code files used to obtain the data in the article "Strategy optimization for Bayesian quantum parameter estimation with finite copies: Adaptive greedy, parallel, sequential and general strategies"
