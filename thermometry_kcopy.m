@@ -187,4 +187,14 @@ for i = 1:No
 end
 
 
-end 
+end
+
+function p = prior_p0_density(h, hmin, hmax, alpha)
+% Custom probability distribution
+    norm_const = (hmax - hmin) * (exp(alpha/2) * besseli(0, alpha/2) - 1);
+    arg = pi * (h - hmin) / (hmax - hmin);
+    num = exp(alpha * (sin(arg).^2)) - 1;
+
+    p = num ./ norm_const;
+    p = p ./ sum(p);
+end
