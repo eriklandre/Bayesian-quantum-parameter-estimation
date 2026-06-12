@@ -17,5 +17,5 @@ To be run in MATLAB, [QETLAB](http://www.qetlab.com/), [YALMIP](https://yalmip.g
 **Solves the $k$-copy thermometry problem**
 - [unitary_and_noise_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_and_noise_greedy.m):
 **Solves the adaptive greedy noisy SU(2) estimation problem (set $p=0$ for the usual SU(2) estimation problem)**
-- [unitary_and_noise_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/unitary_and_noise_kcopy.m):
+- [unitary_and_noise_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/SU(2) estimation/unitary_and_noise_kcopy.m):
 **Solves the $k$-copy noisy SU(2) estimation problem (set $p=0$ for the usual SU(2) estimation problem)**
