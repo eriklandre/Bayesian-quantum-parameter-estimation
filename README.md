@@ -11,8 +11,6 @@ To be run in MATLAB, [QETLAB](http://www.qetlab.com/), [YALMIP](https://yalmip.g
 **Solves the $k$-copy noisy phase estimation problem (set $p=0$ for the usual phase estimation problem)**
 - [thermometry_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/Thermometry/thermometry_greedy.m):
 **Solves the adaptive greedy thermometry problem**
-  - [thermometry_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/Thermometry/thermometry_greedy.m):
-**Solves the adaptive greedy thermometry problem but loading the data for each outcome, such that the code preloads the necessary testers and estimators, yielding a smaller running time**
 - [thermometry_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/Thermometry/thermometry_kcopy.m):
 **Solves the $k$-copy thermometry problem**
 - [unitary_and_noise_greedy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/SU(2)%20estimation/unitary_and_noise_greedy.m):
