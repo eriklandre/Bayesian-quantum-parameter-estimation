@@ -1,4 +1,4 @@
-function score_adaptive = thermometry_greedy_cache(No, k_copies, n_monte_carlo, t)
+function score_adaptive = thermometry_greedy(No, k_copies, n_monte_carlo, t)
 
 d = 2;
 
