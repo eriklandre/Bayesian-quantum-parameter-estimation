@@ -17,3 +17,5 @@ To be run in MATLAB, [QETLAB](http://www.qetlab.com/), [YALMIP](https://yalmip.g
 **Solves the adaptive greedy noisy SU(2) estimation problem (set $p=0$ for the usual SU(2) estimation problem)**
 - [unitary_and_noise_kcopy.m](https://github.com/eriklandre/Bayesian-quantum-parameter-estimation/blob/main/SU(2)%20estimation/unitary_and_noise_kcopy.m):
 **Solves the $k$-copy noisy SU(2) estimation problem (set $p=0$ for the usual SU(2) estimation problem)**
+
+In addition to the files listed above, this repository also includes the non-adaptive estimation codes, as well as the main scripts used to run the simulations and plot the resulting data presented in the article.
