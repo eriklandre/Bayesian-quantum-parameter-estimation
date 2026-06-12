@@ -8,7 +8,7 @@ scores = zeros(length(p_vals), 1);
 %scores_adaptive = zeros(length(No_values), 1);
 for i = 1:length(p_vals)
     p = p_vals(i);
-    [~,score] = script_concatenation_kcopy(no, no, method, ncopies, strategy, p);
+    [~,score] = phaseestimation_and_noise_kcopy(no, no, ncopies, strategy, p);
     scores(i) = score;
 end
 disp(scores);
